@@ -19,44 +19,7 @@ def process_peak(x):
     print(x)
     # Values in peak_on_seconds are not particularly accurate.
     # Find the closest indices.
-    equal_or_greater = x - 1 / 50000 <= benchmark_time
-    equal_or_less = benchmark_time <= x + 1 / 50000
-    idx = np.logical_and(equal_or_greater, equal_or_less)
-    idx = np.flatnonzero(idx)[0]  # Pick one
-
-    # Get suitable positions for the elements
-    x_arrow_head = benchmark_time[idx]
-    y_arrow_head = benchmark_signal[idx - 10000 : idx + 10000].max()
-    x_text = x_arrow_head
-    y_text = y_arrow_head + 100
-
-    # Annotate!
-    axd["main"].annotate(
-        "",
-        xy=(x_arrow_head, y_arrow_head),
-        xytext=(x_text, y_text),
-        arrowprops=dict(arrowstyle="->"),
-    )
-
-    # Should we annotate in lower left plot?
-    if subtime_1[0] <= x_arrow_head <= subtime_1[-1]:
-        # Again, find suitable position:
-        sub_geq = x - 1 / 50000 <= subtime_1
-        sub_leq = subtime_1 <= x + 1 / 50000
-        sub_idx = np.logical_and(sub_geq, sub_leq)
-        sub_idx = np.flatnonzero(sub_idx)[0]
-
-        sub_x_arrow = subtime_1[sub_idx]
-        sub_y_arrow = subsignal_1[sub_idx - 1000 : sub_idx + 1000].max()
-        sub_x_text = sub_x_arrow
-        sub_y_text = sub_y_arrow + 25
-
-        axd["lower left"].annotate(
-            "",
-            xy=(sub_x_arrow, sub_y_arrow),
-            xytext=(sub_x_text, sub_y_text),
-            arrowprops=dict(arrowstyle="->"),
-        )
+    
 
 tracemalloc.start()
 
@@ -255,9 +218,46 @@ if the_connection_patches_are_definitely_not_an_eyesore:
 print(len(peak_on_seconds))
 # Annotate tissue peaks in the main plot and in the lower left plot
 if i_want_to_see_the_peak_markers:
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        executor.map(process_peak, peak_on_seconds)
+    for x in peak_on_seconds:
+        equal_or_greater = x - 1 / 50000 <= benchmark_time
+        equal_or_less = benchmark_time <= x + 1 / 50000
+        idx = np.logical_and(equal_or_greater, equal_or_less)
+        idx = np.flatnonzero(idx)[0]  # Pick one
 
+        # Get suitable positions for the elements
+        x_arrow_head = benchmark_time[idx]
+        y_arrow_head = benchmark_signal[idx - 10000 : idx + 10000].max()
+        x_text = x_arrow_head
+        y_text = y_arrow_head + 100
+
+        # Annotate!
+        axd["main"].annotate(
+            "",
+            xy=(x_arrow_head, y_arrow_head),
+            xytext=(x_text, y_text),
+            arrowprops=dict(arrowstyle="->"),
+        )
+
+        # Should we annotate in lower left plot?
+        if subtime_1[0] <= x_arrow_head <= subtime_1[-1]:
+            # Again, find suitable position:
+            sub_geq = x - 1 / 50000 <= subtime_1
+            sub_leq = subtime_1 <= x + 1 / 50000
+            sub_idx = np.logical_and(sub_geq, sub_leq)
+            sub_idx = np.flatnonzero(sub_idx)[0]
+
+            sub_x_arrow = subtime_1[sub_idx]
+            sub_y_arrow = subsignal_1[sub_idx - 1000 : sub_idx + 1000].max()
+            sub_x_text = sub_x_arrow
+            sub_y_text = sub_y_arrow + 25
+
+            axd["lower left"].annotate(
+                "",
+                xy=(sub_x_arrow, sub_y_arrow),
+                xytext=(sub_x_text, sub_y_text),
+                arrowprops=dict(arrowstyle="->"),
+            )
+            
 print("\nMemory usage after initial setup")
 trace_first_size, trace_first_peak = tracemalloc.get_traced_memory()
 print(f"Traced size: {trace_first_size / 1024 / 1024:.2f} MB")

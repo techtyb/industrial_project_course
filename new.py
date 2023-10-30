@@ -80,7 +80,7 @@ tracemalloc.reset_peak()
 
 data_path = "Benchmark signal.csv"
 samples_per_second = 50000
-seconds = 20
+seconds = 500
 data_raw = pd.read_csv(data_path, nrows=samples_per_second * seconds, usecols=['adc2']).values
 
 # Noise data and thresholds
@@ -96,7 +96,18 @@ height_threshold = mean_noise + 5 * std_noise
 # detrend actual data
 # corrected_data = data_raw
 smoothed_data = moving_average(data_raw)
-peaks, _ = find_peaks(smoothed_data, height=height_threshold)
+
+# Calculating the distance value for the peak dection by calculating the average distance between
+# each peak in our signal
+peaks_without_distance, _ = find_peaks(smoothed_data, height=height_threshold)
+
+distances = np.diff(peaks_without_distance)
+
+# Calculate the average distance
+average_distance = np.mean(distances)
+
+
+peaks, _ = find_peaks(smoothed_data, height=height_threshold, distance=average_distance)
 peak_on_seconds = [value/samples_per_second for index, value in enumerate(peaks)]
 
 # fmt: on
@@ -292,33 +303,3 @@ print(f"Total size: {total_memory / 1024 / 1024:.2f} MB")
 tracemalloc.reset_peak()
 plt.show()
 
-# fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-
-# ax1.plot(smoothed_data)
-# ax1.plot(peaks, smoothed_data[peaks], "rx")
-# ax1.axhline(y=height_threshold, color='y', linewidth=2)
-
-# ax2.plot(smoothed_data, label='Smoothed Data')
-
-# for peak in peaks:
-#     try:
-#         window = 500
-#         x_data = np.arange(peak-window, peak+window)
-#         y_data = smoothed_data[x_data]
-
-#         params, _ = curve_fit(gaussian, x_data, y_data, p0=[smoothed_data[peak], peak, window/2])
-#         fit = gaussian(x_data, *params)
-#         ax2.plot(x_data, fit, "r-", label=f'Gaussian Fit around {peak}')
-
-#     except (RuntimeError, ValueError, IndexError):
-#         continue
-
-# ax1.set_ylim(0, 2800)
-# ax1.set_xlabel("Time")
-# ax1.set_ylabel("Amplitude")
-
-# ax2.set_ylim(0, 2800)
-# ax2.set_xlabel("Time")
-# ax2.set_ylabel("Gaussian Peaks")
-
-# plt.show()

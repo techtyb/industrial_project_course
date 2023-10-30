@@ -80,7 +80,7 @@ tracemalloc.reset_peak()
 
 data_path = "Benchmark signal.csv"
 samples_per_second = 50000
-seconds = 20
+seconds = 500
 data_raw = pd.read_csv(data_path, nrows=samples_per_second * seconds, usecols=['adc2']).values
 
 # Noise data and thresholds
@@ -96,7 +96,18 @@ height_threshold = mean_noise + 5 * std_noise
 # detrend actual data
 # corrected_data = data_raw
 smoothed_data = moving_average(data_raw)
-peaks, _ = find_peaks(smoothed_data, height=height_threshold)
+
+# Calculating the distance value for the peak dection by calculating the average distance between
+# each peak in our signal
+peaks_without_distance, _ = find_peaks(smoothed_data, height=height_threshold)
+
+distances = np.diff(peaks_without_distance)
+
+# Calculate the average distance
+average_distance = np.mean(distances)
+
+
+peaks, _ = find_peaks(smoothed_data, height=height_threshold, distance=average_distance)
 peak_on_seconds = [value/samples_per_second for index, value in enumerate(peaks)]
 
 # fmt: on
